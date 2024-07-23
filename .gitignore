@@ -121,7 +121,7 @@ docs/**/papers/*.md
 docs/**/datasets.md
 docs/**/modelzoo.md
 checkpoints/
-
+visualize/
 !tests/data/**/*.pkl
 !tests/data/**/*.pkl.json
 !tests/data/**/*.log.json
