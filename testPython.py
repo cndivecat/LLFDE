@@ -1,0 +1,20 @@
+def forward(self, x):   #(B,64,H,W)
+    x = self.conv1(x)   #(B,64,H,W)
+    x = self.conv2(x)   #(B,32,H,W)
+    N, C, H, W = x.shape
+    x_ave = F.adaptive_avg_pool2d(x, (1, 1))
+    cos_sim = (F.normalize(x_ave, dim=1) * F.normalize(x, dim=1)).sum(1)
+    cos_sim = cos_sim.view(N, -1)
+    cos_sim_min, _ = cos_sim.min(-1)
+    cos_sim_min = cos_sim_min.unsqueeze(-1)
+    cos_sim_max, _ = cos_sim.max(-1)
+    cos_sim_max = cos_sim_max.unsqueeze(-1)
+    q_levels = torch.arange(self.level_num).float().cuda()
+    q_levels = q_levels.expand(N, self.level_num)
+    q_levels = (2 * q_levels + 1) / (2 * self.level_num) * (cos_sim_max - cos_sim_min) + cos_sim_min
+    q_levels = q_levels.unsqueeze(1)
+    q_levels_inter = q_levels[:, :, 1] - q_levels[:, :, 0]
+    q_levels_inter = q_levels_inter.unsqueeze(-1)
+    cos_sim = cos_sim.unsqueeze(-1)
+    quant = 1 - torch.abs(q_levels - cos_sim)
+    quant = quant * (quant > (1 - q_levels_inter))
